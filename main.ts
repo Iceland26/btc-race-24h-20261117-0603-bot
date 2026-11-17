@@ -10,11 +10,20 @@
 //   * Dip leg: after the close has fallen at least 120 bps below the
 //     highest close of the last 60 bars, watch the dip; once the close
 //     recovers at least 45 bps off the dip low, buy with all cash.
-//   * Breakout leg: when the close is at least 90 bps above the close
-//     5 bars earlier, buy with all cash (momentum continuation).
-//   * Exits, first to trigger on a close: take-profit at +180 bps over
-//     the fill price, stop-loss at -50 bps under it, or a trailing stop
-//     80 bps below the highest close since entry.
+//   * Breakout leg: when the close is at least 120 bps above the close
+//     5 bars earlier, buy with all cash (momentum continuation). The
+//     threshold is a minimum-edge filter: an entry fills at the next
+//     bar's open, ~10 bps over the decision close after slippage and
+//     impact, and a round trip costs ~26 bps all-in, so a 90 bps move
+//     leaves too little expected continuation to clear the friction.
+//   * Exits, first to trigger on a close: take-profit at +140 bps over
+//     the fill price, stop-loss at -65 bps under it, or a trailing stop
+//     80 bps below the highest close since entry. Exits also fill at
+//     the next open, ~12-15 bps past the decision close, and a
+//     confirmed dip routinely pulls back 50-55 bps before it resolves:
+//     the stop sits outside that gap-plus-noise band, and the target
+//     inside the excursion these setups actually produce (~150 bps),
+//     so peaks are banked instead of handed back to the trailing stop.
 // One position at a time, long only, no leverage.
 
 import { createInterface } from "node:readline";
@@ -26,9 +35,9 @@ const DIP_WINDOW = 60; // bars in the rolling high for the dip leg
 const DIP_TRIGGER_BPS = 120n; // fall from the rolling high that arms the dip
 const DIP_CONFIRM_BPS = 45n; // recovery off the dip low that confirms entry
 const BREAKOUT_SPAN = 5; // bars over which the breakout move is measured
-const BREAKOUT_BPS = 90n; // 5-bar rise that triggers the breakout leg
-const TAKE_PROFIT_BPS = 180n;
-const STOP_LOSS_BPS = 50n;
+const BREAKOUT_BPS = 120n; // 5-bar rise that triggers the breakout leg
+const TAKE_PROFIT_BPS = 140n;
+const STOP_LOSS_BPS = 65n;
 const TRAILING_BPS = 80n;
 const ENTRY_SLIPPAGE_BPS = 250;
 const EXIT_SLIPPAGE_BPS = 300;
